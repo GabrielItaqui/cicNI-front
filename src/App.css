@@ -1,0 +1,538 @@
+.app-container {
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 12px;
+}
+
+.app-title {
+  margin: 0;
+  font-size: 22px;
+}
+
+.app-subtitle {
+  margin-top: 4px;
+  color: #555;
+}
+
+.error-box {
+  margin-top: 10px;
+  border: 1px solid #e58;
+  color: #821;
+  background: #fdeff1;
+  padding: 8px;
+  border-radius: 6px;
+}
+
+.actions-row {
+  margin-top: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.summary {
+  color: #555;
+}
+
+.btn {
+  padding: 8px 12px;
+  border: 1px solid #888;
+  border-radius: 6px;
+  background: #f7f7f7;
+  cursor: pointer;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.table-container {
+  margin-top: 8px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.th {
+  border-bottom: 1px solid #ccc;
+  padding: 6px;
+  text-align: left;
+  position: sticky;
+  top: 0;
+  background: #fafafa;
+  z-index: 1;
+  white-space: nowrap;
+}
+
+.td {
+  border-top: 1px solid #eee;
+  padding: 6px;
+  vertical-align: top;
+}
+
+.tr-alt {
+  background: #fcfcfc;
+}
+
+.td-right {
+  text-align: right;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+
+/* ===== Toolbar e comparador ===== */
+.cmp-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px;
+  border-bottom: 1px solid #eee;
+  background: #fff;
+}
+
+.cmp-legend {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap
+}
+
+.cmp-right {
+  display: flex;
+  gap: 8px;
+  align-items: center
+}
+
+.pill {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid #bbb;
+  background: #fafafa
+}
+
+.pill-ok {
+  background: #e8f6ee;
+  border-color: #2ecc71
+}
+
+.pill-warn {
+  background: #fff8e1;
+  border-color: #f1c40f
+}
+
+.pill-miss {
+  background: #fdecea;
+  border-color: #e74c3c
+}
+
+.cmp-toggle {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 13px;
+  color: #444
+}
+
+.td.cmp {
+  transition: background-color .12s ease-in-out
+}
+
+.td.cmp-ok {
+  background: #e8f6ee
+}
+
+.td.cmp-warn {
+  background: #fff8e1
+}
+
+.td.cmp-miss {
+  background: #fdecea
+}
+
+.row-ok>td:first-child {
+  border-left: 4px solid #2ecc71
+}
+
+.row-warn>td:first-child {
+  border-left: 4px solid #f1c40f
+}
+
+.row-miss>td:first-child {
+  border-left: 4px solid #e74c3c
+}
+
+.table-scroll {
+  overflow: auto
+}
+
+.sticky-header th {
+  position: sticky;
+  top: 0;
+  background: #f6f8fa;
+  z-index: 2
+}
+
+.sticky-col {
+  position: sticky;
+  left: 0;
+  background: #fff;
+  z-index: 1
+}
+
+.th {
+  cursor: pointer;
+  user-select: none
+}
+
+.th-right {
+  text-align: right
+}
+
+.th-wide {
+  min-width: 320px
+}
+
+.th .th-sort-hint {
+  margin-left: 6px;
+  opacity: .35
+}
+
+/* skeleton */
+.skeleton {
+  height: 14px;
+  width: 100%;
+  background: linear-gradient(90deg, #eee 25%, #f5f5f5 37%, #eee 63%);
+  background-size: 400% 100%;
+  border-radius: 4px;
+  animation: shimmer 1.2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 100% 0
+  }
+
+  100% {
+    background-position: 0 0
+  }
+}
+
+/* Fixar layout e larguras das colunas definidas no <colgroup> */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  /* respeita o colgroup */
+}
+
+/* Quebra de linha nas descrições (colunas 4 e 5) quando a célula for estreita */
+.table .wrap {
+  word-break: break-word;
+  hyphens: auto;
+}
+
+/* Centralizar unidades (colunas 7 e 9) sem alterar lógica */
+.td-center {
+  text-align: center;
+}
+
+/* Ajustes do header para as colunas numéricas e de unidade em telas estreitas */
+.sticky-header th:nth-child(6),
+.sticky-header th:nth-child(8),
+.sticky-header th:nth-child(10),
+.sticky-header th:nth-child(11) {
+  text-align: right;
+  /* QTD/VALORES à direita */
+}
+
+.sticky-header th:nth-child(7),
+.sticky-header th:nth-child(9) {
+  text-align: center;
+  /* Unidades centralizadas */
+}
+
+/* Garantir scroll horizontal quando necessário (já existente, mantido) */
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+
+/* Impressão em paisagem preservando proporções */
+@media print {
+  @page {
+    size: landscape;
+  }
+
+  .table-scroll {
+    overflow: visible;
+  }
+}
+
+.app-container {
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 12px;
+}
+
+.app-title {
+  margin: 0;
+  font-size: 22px;
+}
+
+.app-subtitle {
+  margin-top: 4px;
+  color: #555;
+}
+
+.error-box {
+  margin: 12px 0;
+  padding: 10px;
+  border: 1px solid #f5c2c7;
+  background: #f8d7da;
+  color: #842029;
+  border-radius: 8px;
+}
+
+.actions-row {
+  margin: 12px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.summary {
+  color: #444;
+}
+
+.btn {
+  background: #111;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.table-container {
+  margin-top: 12px;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 10px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.th {
+  border-bottom: 1px solid #ccc;
+  padding: 6px;
+  text-align: left;
+  position: sticky;
+  top: 0;
+  background: #fafafa;
+  z-index: 1;
+  white-space: nowrap;
+}
+
+.td {
+  border-top: 1px solid #eee;
+  padding: 6px;
+  vertical-align: top;
+}
+
+.tr-alt {
+  background: #fcfcfc;
+}
+
+.td-right {
+  text-align: right;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+/* ===== Toolbar e comparador ===== */
+.cmp-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px;
+  border-bottom: 1px solid #eee;
+  background: #fff;
+}
+
+.cmp-legend {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.cmp-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 4px 8px;
+  border: 1px solid #eee;
+  border-radius: 999px;
+  background: #fff;
+}
+
+.cmp-hint {
+  font-size: 12px;
+  color: #666;
+}
+
+.row-ok>td:first-child {
+  border-left: 4px solid #2ecc71;
+}
+
+.row-warn>td:first-child {
+  border-left: 4px solid #f1c40f;
+}
+
+.row-miss>td:first-child {
+  border-left: 4px solid #e74c3c;
+}
+
+.table-scroll {
+  overflow: auto;
+}
+
+.sticky-header th {
+  position: sticky;
+  top: 0;
+  background: #f6f8fa;
+  z-index: 2;
+}
+
+.sticky-col {
+  position: sticky;
+  left: 0;
+  background: #fff;
+  z-index: 1;
+}
+
+.th {
+  cursor: pointer;
+  user-select: none;
+}
+
+.th .sort {
+  font-size: 12px;
+  color: #777;
+}
+
+/* skeleton */
+.skel-row {
+  display: grid;
+  grid-template-columns: 40px 80px 1fr 1fr 80px 60px 80px 60px 80px 100px 100px;
+  gap: 8px;
+  padding: 8px;
+  border-top: 1px solid #eee;
+}
+
+.skel-bar {
+  height: 12px;
+  background: linear-gradient(90deg, #eee 25%, #f5f5f5 37%, #eee 63%);
+  background-size: 400% 100%;
+  border-radius: 4px;
+  animation: shimmer 1.2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+
+  100% {
+    background-position: 0 0;
+  }
+}
+
+/* ===== Resumo (midcard) ===== */
+.summary-card {
+  margin: 12px 0;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  display: grid;
+  gap: 12px;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 900px) {
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.summary-section {
+  border: 1px dashed #eee;
+  border-radius: 8px;
+  padding: 10px;
+  background: #fafafa;
+}
+
+.summary-title {
+  font-weight: 600;
+  margin: 0 0 6px 0;
+}
+
+.summary-total {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.summary-hint {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+}
+
+.unit-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.unit-chip {
+  font-size: 12px;
+  padding: 4px 8px;
+  border: 1px solid #ddd;
+  border-radius: 999px;
+  background: #fff;
+}
