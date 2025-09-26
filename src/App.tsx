@@ -34,7 +34,7 @@ export default function App() {
   const [fcFile, setFcFile] = useState<File | null>(null);
 
   // [IR_CHANGE] Adiciona o estado para o perfil do CO
-  const [coProfile, setCoProfile] = useState("CO_ACE72");
+  const [coProfile, setCoProfile] = useState("co_ace72");
   // Perfil da FC (valor exato que o back espera)
   const [fcProfile, setFcProfile] = useState("fc_marcopolo");
 
@@ -154,7 +154,7 @@ export default function App() {
         // [IR_CHANGE] Passa o perfil e o callback de mudança para o Header
         coProfile={coProfile}
         onChangeCoProfile={setCoProfile}
-        availableProfiles={["CO_ACE72", "fc_marcopolo", "fc_foca"]}
+        availableProfiles={["co_ace72", "fc_marcopolo", "fc_foca"]}
         onChangeFcProfile={setFcProfile}
       />
 

@@ -42,8 +42,8 @@ type HeaderProps = {
 // [IR_CORRECTION]: A função de normalização foi corrigida para manter o prefixo
 function canonicalizeProfile(input?: string): string {
   if (!input) return "";
-  let s = input.split("/").pop() || input; // `fc_marcopolo.py` ou `CO_ACE72`
-  return s.replace(/\.(py|json)$/i, ""); // `fc_marcopolo` ou `CO_ACE72`
+  let s = input.split("/").pop() || input; // `fc_marcopolo.py` ou `co_ace72`
+  return s.replace(/\.(py|json)$/i, ""); // `fc_marcopolo` ou `co_ace72`
 }
 
 function prettyLabelFromValue(val: string): string {
@@ -53,7 +53,7 @@ function prettyLabelFromValue(val: string): string {
 }
 
 const DEFAULT_PROFILES: ProfileOption[] = [
-  { value: "CO_ACE72", label: "CO - ACE-72" },
+  { value: "co_ace72", label: "CO - ACE-72" },
   { value: "fc_marcopolo", label: "FC - Marcopolo" },
   { value: "fc_foca", label: "FC - Foca" },
 ];
@@ -96,7 +96,7 @@ export default function Header({
   }, [availableProfiles]);
 
   const coOptions = useMemo(
-    () => profileOptions.filter((p) => p.value.startsWith("CO_")),
+    () => profileOptions.filter((p) => p.value.startsWith("co_")),
     [profileOptions]
   );
   const fcOptions = useMemo(
