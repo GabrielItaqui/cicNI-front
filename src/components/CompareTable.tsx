@@ -101,7 +101,7 @@ export default function CompareTable({
 
     const fcIdx = buildIndexes(fcRows);
 
-    // ===== desempate com prioridade: NCM > CÓDIGO > tokens(1,2,3) > ΔQTD > ΔVALOR
+    // ===== desempate com prioridade: CÓDIGO > tokens(1,2,3) > NCM > ΔQTD > ΔVALOR
     const pickBestCandidate = (cands: FlatRow[], co: FlatRow) => {
       const ct = tokens(co.descricao);
       const ncmCO = normalizeStr(co.ncm);
@@ -112,9 +112,6 @@ export default function CompareTable({
 
       for (const fc of cands) {
         const ft = tokens(fc.descricao);
-        const ncmMatch = normalizeStr(fc.ncm) === ncmCO ? 1 : 0;
-
-        // código forte: se ambos tiverem e forem iguais, 1; senão, 0
         const codeFC = normalizeCode(fc.code);
         const codeMatch = codeCO && codeFC && codeCO === codeFC ? 1 : 0;
 
@@ -122,14 +119,15 @@ export default function CompareTable({
         const m1 = ct[1] && ft[1] && ct[1] === ft[1] ? 1 : 0;
         const m2 = ct[2] && ft[2] && ct[2] === ft[2] ? 1 : 0;
 
-        const dq = -Math.abs(toNum(co.qtd) - toNum(fc.qtd));    // quanto menor a diferença, melhor
-        const dv = -Math.abs(toNum(co.valor) - toNum(fc.valor)); // idem para valor
+        const ncmMatch = normalizeStr(fc.ncm) === ncmCO ? 1 : 0;
+
+        const dq = -Math.abs(toNum(co.qtd) - toNum(fc.qtd));
+        const dv = -Math.abs(toNum(co.valor) - toNum(fc.valor));
 
         const tup: [number, number, number, number, number, number, number] = [
-          ncmMatch, codeMatch, m0, m1, m2, dq, dv
+          codeMatch, m0, m1, m2, ncmMatch, dq, dv
         ];
 
-        // comparação lexicográfica
         let better = false;
         for (let k = 0; k < tup.length; k++) {
           if (tup[k] > bestTuple[k]) { better = true; break; }
@@ -138,25 +136,12 @@ export default function CompareTable({
         if (better) { bestTuple = tup; best = fc; }
       }
 
-      // devolve também em qual "modo" predominante casou (para pintar e comparar descrição)
       const mode: "code" | "ncm" | "name" =
         (normalizeCode(co.code) && normalizeCode(best.code) && normalizeCode(co.code) === normalizeCode(best.code))
           ? "code"
           : (normalizeStr(best.ncm) === normalizeStr(co.ncm) ? "ncm" : "name");
 
       return { best, mode };
-    };
-
-    // utilitário para unir listas com deduplicação
-    const uniqueMerge = (...lists: FlatRow[][]) => {
-      const seen = new Set<FlatRow>();
-      const out: FlatRow[] = [];
-      for (const list of lists) {
-        for (const r of list) {
-          if (!seen.has(r)) { seen.add(r); out.push(r); }
-        }
-      }
-      return out;
     };
 
     type OutRow = {
@@ -179,22 +164,21 @@ export default function CompareTable({
 
     const out: OutRow[] = [];
 
-    // ===== casamento CO → FC obedecendo: NCM > CÓDIGO > tokens(1,2,3) > ΔQTD > ΔVALOR
+    // ===== casamento CO → FC obedecendo o gate: code > token > NCM > fallback
     for (const rCO of coRows) {
       const ncmCO = normalizeStr(rCO.ncm);
       const tokCO = firstToken(rCO.descricao);
       const codeCO = normalizeCode(rCO.code);
 
-      // candidatos prioritários
-      const poolNcm = (fcIdx.byNcm.get(ncmCO) || []).filter((r) => !usedFC.has(r));
-      const poolCode = codeCO ? (fcIdx.byCode.get(codeCO) || []).filter((r) => !usedFC.has(r)) : [];
-      const poolTok = tokCO ? (fcIdx.byFirstTok.get(tokCO) || []).filter((r) => !usedFC.has(r)) : [];
+      const poolByCode = codeCO ? (fcIdx.byCode.get(codeCO) || []).filter((r) => !usedFC.has(r)) : [];
+      const poolByTok  = tokCO  ? (fcIdx.byFirstTok.get(tokCO) || []).filter((r) => !usedFC.has(r)) : [];
+      const poolByNcm  = (fcIdx.byNcm.get(ncmCO) || []).filter((r) => !usedFC.has(r));
 
-      // união (mantém ordem de prioridade implícita, mas o desempate final é pela tupla)
-      let pool = uniqueMerge(poolNcm, poolCode, poolTok);
-
-      // fallback extremo: se vazio, considera qualquer FC ainda não usado
-      if (!pool.length) pool = fcRows.filter((r) => !usedFC.has(r));
+      let pool: FlatRow[] = [];
+      if (poolByCode.length) pool = poolByCode;
+      else if (poolByTok.length) pool = poolByTok;
+      else if (poolByNcm.length) pool = poolByNcm;
+      else pool = fcRows.filter((r) => !usedFC.has(r));
 
       let rFC: FlatRow | undefined;
       let mode: OutRow["matchMode"] = undefined;
@@ -263,19 +247,26 @@ export default function CompareTable({
         sDesc = cmpCode(r.codeCO, r.codeFC);
       } else {
         const stripLeadingCode = (s: string) => s.replace(/^\s*0*\d{5,}\b[:\-]?\s*/, "");
-        const tk = (s?: string) =>
-          normalizeStr(String(s ?? ""))
-            .replace(/^\s*0*\d{5,}\b[:\-]?\s*/, "")
-            .split(/[^A-Z0-9]+/)
-            .filter(Boolean);
+        const canon = (s?: string) => normalizeStr(stripLeadingCode(String(s ?? "")));
 
-        const tCO = tk(stripLeadingCode(r.descCO));
-        const tFC = tk(stripLeadingCode(r.descFC));
-        const m0 = !!tCO[0] && tCO[0] === tFC[0];
-        const m1 = !!tCO[1] && tCO[1] === tFC[1];
-        const m2 = !!tCO[2] && tCO[2] === tFC[2];
+        // PATCH "Batiente": igualdade canônica do nome completo
+        if (canon(r.descCO) === canon(r.descFC)) {
+          sDesc = "ok";
+        } else {
+          const tk = (s?: string) =>
+            normalizeStr(String(s ?? ""))
+              .replace(/^\s*0*\d{5,}\b[:\-]?\s*/, "")
+              .split(/[^A-Z0-9]+/)
+              .filter(Boolean);
 
-        sDesc = m0 && m1 ? "ok" : (m0 || m1 || m2) ? "warn" : "miss";
+          const tCO = tk(stripLeadingCode(r.descCO));
+          const tFC = tk(stripLeadingCode(r.descFC));
+          const m0 = !!tCO[0] && tCO[0] === tFC[0];
+          const m1 = !!tCO[1] && tCO[1] === tFC[1];
+          const m2 = !!tCO[2] && tCO[2] === tFC[2];
+
+          sDesc = m0 && m1 ? "ok" : (m0 || m1 || m2) ? "warn" : "miss";
+        }
       }
 
       const sQtd: CmpState = cmpNumber(r.qtdCO, r.qtdFC, 1e-6);
@@ -517,7 +508,6 @@ function Th({
 }
 
 /* ================= Funções de agregação ================= */
-// Corrigida: não altera key/descricao; serve apenas para somar por NCM.
 function aggregateByNCM(rows: FlatRow[]): FlatRow[] {
   const map = new Map<string, FlatRow>();
 
@@ -532,7 +522,6 @@ function aggregateByNCM(rows: FlatRow[]): FlatRow[] {
     } else {
       map.set(ncm, {
         ...row,
-        // Mantém key/descricao originais
         key: row.key,
         descricao: row.descricao,
       });
@@ -543,7 +532,6 @@ function aggregateByNCM(rows: FlatRow[]): FlatRow[] {
 
 /* ================= Helpers ================= */
 
-/** Aceita { data: { itens: [...] } } ou { itens: [...] } ou { data: { items: [...] } } */
 function getItemsFromPayload(payload: any): any[] {
   const data = payload?.data ?? payload;
   const itens = data?.itens ?? data?.items ?? [];
@@ -715,7 +703,7 @@ function cls(s: CmpState): string {
   return s === "ok" ? "cmp-ok" : s === "warn" ? "cmp-warn" : "cmp-miss";
 }
 
-//  ============== AGRUPAMENTO VISUAL (sem somar / sem remover) ==============
+/* ============== AGRUPAMENTO VISUAL (sem somar / sem remover) ============== */
 
 type MergedRow = {
   key?: string;
@@ -736,32 +724,38 @@ type MergedRow = {
 };
 
 function groupMergedRows(rows: MergedRow[]): MergedRow[] {
-  const map = new Map<string, MergedRow>();
-
+  // 1) helpers p/ nome canônico e tokens
   const stripLeadingCode = (s: string) => (s || "").replace(/^\s*0*\d{5,}\b[:\-]?\s*/, "");
-  const canonNameFull = (s?: string) => normalizeStr(stripLeadingCode(String(s ?? "")));
+  const canon = (s?: string) => normalizeStr(stripLeadingCode(String(s ?? "")));
+  const toks = (s?: string) => canon(s).split(/[^A-Z0-9]+/).filter(Boolean);
 
-  const softKey = (r: MergedRow) => {
-    // Chave PRIMÁRIA: apenas o CO (nome + NCM) — é isso que determina o merge
-    const nameCO = canonNameFull(r.descCO);
-    const ncmCO = normalizeStr(r.ncmCO);
-
-    // Fallback: se CO vier vazio, usamos FC para não perder colapsos raros
-    const nameFC = canonNameFull(r.descFC);
-    const ncmFC = normalizeStr(r.ncmFC);
-
-    // Gate de código: conjunto ordem-independente; se houver, precisa ser igual
-    const codeSet = [normalizeCode(r.codeCO), normalizeCode(r.codeFC)]
-      .filter(Boolean)
-      .sort()
-      .join("+");
-    const codeGate = codeSet ? `|CODE:${codeSet}` : "";
-
-    if (nameCO || ncmCO) {
-      return `CO:${nameCO}|${ncmCO}${codeGate}`;
-    }
-    return `FC:${nameFC}|${ncmFC}${codeGate}`;
+  // maior prefixo comum de tokens (>=2 tokens)
+  const commonPrefix2 = (a: string[], b: string[]) => {
+    let i = 0;
+    while (i < a.length && i < b.length && a[i] === b[i]) i++;
+    const out = a.slice(0, i).join(" ");
+    return out.split(" ").filter(Boolean).length >= 2 ? out : "";
   };
+
+  // nome base (reduz "PORTAPAQUETES" vs base)
+  const baseName = (co?: string, fc?: string) => {
+    const c = canon(co);
+    const f = canon(fc);
+    if (!c && !f) return "";
+    if (!c || !f) return c || f;
+    if (c === f) return c;
+    if (c.startsWith(f)) return f;
+    if (f.startsWith(c)) return c;
+    return commonPrefix2(toks(c), toks(f)) || c || f;
+  };
+
+  // 2) vamos agrupar em dois níveis:
+  //    a) por baseName
+  //    b) por "conectividade" de NCM: linhas com interseção de NCMs (CO/FC) caem no mesmo grupo
+  type Group = { row: MergedRow; ncmSet: Set<string> };
+  const byName = new Map<string, Group[]>();
+
+  const normN = (s: unknown) => normalizeStr(s || "");
 
   const joinField = (a?: string | number, b?: string | number) => {
     const A = (a ?? "").toString().trim();
@@ -771,29 +765,61 @@ function groupMergedRows(rows: MergedRow[]): MergedRow[] {
     return A === B ? A : `${A}, ${B}`;
   };
 
-  for (const r of rows) {
-    const k = softKey(r);
-    const found = map.get(k);
-    if (found) {
-      // não somar; apenas colapsar visualmente e preservar informações não vazias
-      found.ordem = joinField(found.ordem, r.ordem);
-      found.key = joinField(found.key, r.key) as string;
+  const mergeInto = (dst: Group, src: Group) => {
+    const dr = dst.row, sr = src.row;
 
-      if (!found.descCO && r.descCO) found.descCO = r.descCO;
-      if (!found.descFC && r.descFC) found.descFC = r.descFC;
-      if (!found.ncmCO && r.ncmCO) found.ncmCO = r.ncmCO;
-      if (!found.ncmFC && r.ncmFC) found.ncmFC = r.ncmFC;
-      if (!found.unCO && r.unCO) found.unCO = r.unCO;
-      if (!found.unFC && r.unFC) found.unFC = r.unFC;
-      if (!found.codeCO && r.codeCO) found.codeCO = r.codeCO as string;
-      if (!found.codeFC && r.codeFC) found.codeFC = r.codeFC as string;
-      if (!found.matchMode && r.matchMode) found.matchMode = r.matchMode;
-    } else {
-      map.set(k, { ...r });
+    dr.ordem = joinField(dr.ordem, sr.ordem);
+    dr.key   = joinField(dr.key, sr.key) as string;
+
+    if (!dr.descCO && sr.descCO) dr.descCO = sr.descCO;
+    if (!dr.descFC && sr.descFC) dr.descFC = sr.descFC;
+    if (!dr.ncmCO  && sr.ncmCO)  dr.ncmCO  = sr.ncmCO;
+    if (!dr.ncmFC  && sr.ncmFC)  dr.ncmFC  = sr.ncmFC;
+    if (!dr.unCO   && sr.unCO)   dr.unCO   = sr.unCO;
+    if (!dr.unFC   && sr.unFC)   dr.unFC   = sr.unFC;
+    if (!dr.codeCO && sr.codeCO) dr.codeCO = sr.codeCO;
+    if (!dr.codeFC && sr.codeFC) dr.codeFC = sr.codeFC;
+    if (!dr.matchMode && sr.matchMode) dr.matchMode = sr.matchMode;
+
+    // união de NCMs
+    for (const n of src.ncmSet) dst.ncmSet.add(n);
+  };
+
+  for (const r of rows) {
+    const nameKey = baseName(r.descCO, r.descFC);
+    const nset = new Set(
+      [normN(r.ncmCO), normN(r.ncmFC)].filter(Boolean)
+    );
+
+    const gArr = byName.get(nameKey) || [];
+
+    // procura grupo com interseção de NCM
+    let idx = -1;
+    for (let i = 0; i < gArr.length; i++) {
+      const g = gArr[i];
+      let intersects = false;
+      for (const n of nset) {
+        if (g.ncmSet.has(n)) { intersects = true; break; }
+      }
+      if (intersects) { idx = i; break; }
     }
+
+    const newGroup: Group = { row: { ...r }, ncmSet: new Set(nset) };
+
+    if (idx === -1) {
+      gArr.push(newGroup);
+    } else {
+      mergeInto(gArr[idx], newGroup);
+    }
+    byName.set(nameKey, gArr);
   }
 
-  return Array.from(map.values());
+  // flatten
+  const out: MergedRow[] = [];
+  for (const groups of byName.values()) {
+    for (const g of groups) out.push(g.row);
+  }
+  return out;
 }
 
 /* skeleton loader */
